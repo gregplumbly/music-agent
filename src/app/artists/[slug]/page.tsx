@@ -1,29 +1,49 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { ArrowLeft, Pencil, Trash2 } from "lucide-react";
+import { startOfMonth, endOfMonth, format } from "date-fns";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ArtistForm, type ArtistFormData } from "@/components/artists/artist-form";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
-import { getArtistBySlug, updateArtist, deleteArtist } from "@/lib/artists";
+import { CalendarGrid, type CalendarBooking } from "@/components/calendar/calendar-grid";
+import { CalendarHeader } from "@/components/calendar/calendar-header";
+import { CreateBookingDialog } from "@/components/bookings/create-booking-dialog";
+import { getArtistBySlug, updateArtist, deleteArtist, getArtists } from "@/lib/artists";
+import { getBookings, createBooking } from "@/lib/bookings";
 import type { Artist } from "@/types/database";
 
 export default function ArtistDetailPage() {
   const params = useParams<{ slug: string }>();
   const router = useRouter();
   const [artist, setArtist] = useState<Artist | null>(null);
+  const [allArtists, setAllArtists] = useState<Artist[]>([]);
   const [loading, setLoading] = useState(true);
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
+  // Calendar state
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [bookings, setBookings] = useState<CalendarBooking[]>([]);
+  const [bookingsLoading, setBookingsLoading] = useState(true);
+  const [createOpen, setCreateOpen] = useState(false);
+  const [createDate, setCreateDate] = useState<string>("");
+
+  // Stats
+  const [totalBookings, setTotalBookings] = useState(0);
+
   useEffect(() => {
     async function load() {
       try {
-        const data = await getArtistBySlug(params.slug);
+        const [data, artists] = await Promise.all([
+          getArtistBySlug(params.slug),
+          getArtists(),
+        ]);
         setArtist(data as Artist | null);
+        setAllArtists(artists as Artist[]);
       } catch (err) {
         console.error("Failed to load artist:", err);
       } finally {
@@ -32,6 +52,31 @@ export default function ArtistDetailPage() {
     }
     load();
   }, [params.slug]);
+
+  const fetchBookings = useCallback(async () => {
+    if (!artist) return;
+    setBookingsLoading(true);
+    try {
+      const monthStart = startOfMonth(currentDate);
+      const monthEnd = endOfMonth(currentDate);
+      const data = await getBookings({
+        artist_id: artist.id,
+        date_from: format(monthStart, "yyyy-MM-dd"),
+        date_to: format(monthEnd, "yyyy-MM-dd"),
+      });
+      setBookings(data as CalendarBooking[]);
+      const allBookings = await getBookings({ artist_id: artist.id });
+      setTotalBookings(allBookings.length);
+    } catch (err) {
+      console.error("Failed to fetch bookings:", err);
+    } finally {
+      setBookingsLoading(false);
+    }
+  }, [artist, currentDate]);
+
+  useEffect(() => {
+    fetchBookings();
+  }, [fetchBookings]);
 
   const handleEdit = async (data: ArtistFormData) => {
     if (!artist) return;
@@ -59,6 +104,26 @@ export default function ArtistDetailPage() {
     } finally {
       setDeleting(false);
     }
+  };
+
+  const handleBookingClick = (booking: CalendarBooking) => {
+    router.push(`/bookings/${booking.id}`);
+  };
+
+  const handleDateClick = (date: Date) => {
+    setCreateDate(format(date, "yyyy-MM-dd"));
+    setCreateOpen(true);
+  };
+
+  const handleCreateBooking = async (artistId: string, date: string) => {
+    const created = await createBooking({
+      artist_id: artistId,
+      date,
+      status: "enquiry",
+      status_locked: false,
+      deal_versus: false,
+    });
+    router.push(`/bookings/${created.id}`);
   };
 
   if (loading) {
@@ -117,15 +182,46 @@ export default function ArtistDetailPage() {
         </div>
       </div>
 
+      {/* Quick stats */}
+      <div className="mt-4 flex gap-4">
+        <div className="rounded-md border border-border px-4 py-2">
+          <p className="text-xs text-muted-foreground">Total Bookings</p>
+          <p className="text-lg font-semibold">{totalBookings}</p>
+        </div>
+        <div className="rounded-md border border-border px-4 py-2">
+          <p className="text-xs text-muted-foreground">This Month</p>
+          <p className="text-lg font-semibold">{bookings.length}</p>
+        </div>
+      </div>
+
       {artist.notes && (
-        <div className="mt-6 rounded-md border border-border p-4">
+        <div className="mt-4 rounded-md border border-border p-4">
           <h2 className="text-sm font-medium text-muted-foreground">Notes</h2>
           <p className="mt-1 text-sm whitespace-pre-wrap">{artist.notes}</p>
         </div>
       )}
 
-      <div className="mt-8 rounded-md border border-border p-6 text-center text-muted-foreground">
-        <p>Artist calendar will appear here (Issue #7)</p>
+      {/* Artist calendar */}
+      <div className="mt-6">
+        <CalendarHeader
+          currentDate={currentDate}
+          onDateChange={setCurrentDate}
+        />
+        <div className="mt-3 rounded-lg border border-border">
+          {bookingsLoading ? (
+            <div className="flex h-[500px] items-center justify-center text-muted-foreground">
+              Loading...
+            </div>
+          ) : (
+            <CalendarGrid
+              currentDate={currentDate}
+              bookings={bookings}
+              onBookingClick={handleBookingClick}
+              onDateClick={handleDateClick}
+              showArtistName={false}
+            />
+          )}
+        </div>
       </div>
 
       {editOpen && (
@@ -136,6 +232,15 @@ export default function ArtistDetailPage() {
           artist={artist}
         />
       )}
+
+      <CreateBookingDialog
+        open={createOpen}
+        onClose={() => setCreateOpen(false)}
+        onSubmit={handleCreateBooking}
+        artists={allArtists}
+        defaultArtistId={artist.id}
+        defaultDate={createDate}
+      />
 
       <ConfirmDialog
         open={deleteOpen}
