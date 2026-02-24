@@ -12,7 +12,7 @@ import { CalendarGrid, type CalendarBooking } from "@/components/calendar/calend
 import { CalendarHeader } from "@/components/calendar/calendar-header";
 import { CreateBookingDialog } from "@/components/bookings/create-booking-dialog";
 import { getArtistBySlug, updateArtist, deleteArtist, getArtists } from "@/lib/artists";
-import { getBookings, createBooking } from "@/lib/bookings";
+import { getBookings, createBooking, updateBooking, duplicateBooking } from "@/lib/bookings";
 import type { Artist } from "@/types/database";
 
 export default function ArtistDetailPage() {
@@ -103,6 +103,24 @@ export default function ArtistDetailPage() {
       router.push("/artists");
     } finally {
       setDeleting(false);
+    }
+  };
+
+  const handleBookingMove = async (bookingId: string, newDate: string) => {
+    try {
+      await updateBooking(bookingId, { date: newDate });
+      await fetchBookings();
+    } catch (err) {
+      console.error("Failed to move booking:", err);
+    }
+  };
+
+  const handleBookingDuplicate = async (bookingId: string, newDate: string) => {
+    try {
+      await duplicateBooking(bookingId, newDate);
+      await fetchBookings();
+    } catch (err) {
+      console.error("Failed to duplicate booking:", err);
     }
   };
 
@@ -218,6 +236,8 @@ export default function ArtistDetailPage() {
               bookings={bookings}
               onBookingClick={handleBookingClick}
               onDateClick={handleDateClick}
+              onBookingMove={handleBookingMove}
+              onBookingDuplicate={handleBookingDuplicate}
               showArtistName={false}
             />
           )}

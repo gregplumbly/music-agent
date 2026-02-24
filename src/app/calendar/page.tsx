@@ -7,7 +7,7 @@ import { CalendarGrid, type CalendarBooking } from "@/components/calendar/calend
 import { CalendarHeader } from "@/components/calendar/calendar-header";
 import { CreateBookingDialog } from "@/components/bookings/create-booking-dialog";
 import { Select } from "@/components/ui/select";
-import { getBookings } from "@/lib/bookings";
+import { getBookings, updateBooking, duplicateBooking } from "@/lib/bookings";
 import { getArtists } from "@/lib/artists";
 import { STATUS_CONFIG } from "@/lib/constants";
 import type { Artist } from "@/types/database";
@@ -67,6 +67,24 @@ export default function CalendarPage() {
     setCreateOpen(true);
   };
 
+  const handleBookingMove = async (bookingId: string, newDate: string) => {
+    try {
+      await updateBooking(bookingId, { date: newDate });
+      await fetchBookings();
+    } catch (err) {
+      console.error("Failed to move booking:", err);
+    }
+  };
+
+  const handleBookingDuplicate = async (bookingId: string, newDate: string) => {
+    try {
+      await duplicateBooking(bookingId, newDate);
+      await fetchBookings();
+    } catch (err) {
+      console.error("Failed to duplicate booking:", err);
+    }
+  };
+
   const handleCreateBooking = async (artistId: string, date: string) => {
     const { createBooking } = await import("@/lib/bookings");
     const created = await createBooking({
@@ -122,6 +140,8 @@ export default function CalendarPage() {
             bookings={bookings}
             onBookingClick={handleBookingClick}
             onDateClick={handleDateClick}
+            onBookingMove={handleBookingMove}
+            onBookingDuplicate={handleBookingDuplicate}
             showArtistName={true}
           />
         )}
