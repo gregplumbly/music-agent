@@ -12,6 +12,7 @@ interface ConfirmDialogProps {
   confirmLabel?: string;
   variant?: "default" | "destructive";
   loading?: boolean;
+  children?: React.ReactNode;
 }
 
 export function ConfirmDialog({
@@ -23,6 +24,7 @@ export function ConfirmDialog({
   confirmLabel = "Confirm",
   variant = "default",
   loading = false,
+  children,
 }: ConfirmDialogProps) {
   return (
     <Dialog open={open} onClose={onClose}>
@@ -30,6 +32,7 @@ export function ConfirmDialog({
         <DialogTitle>{title}</DialogTitle>
       </DialogHeader>
       <p className="text-sm text-muted-foreground">{description}</p>
+      {children}
       <DialogFooter>
         <Button variant="outline" onClick={onClose} disabled={loading}>
           Cancel

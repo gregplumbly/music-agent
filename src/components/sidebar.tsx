@@ -11,6 +11,7 @@ import {
   Search,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useSearch } from "@/components/search/search-provider";
 
 const navigation = [
   { name: "Dashboard", href: "/", icon: LayoutDashboard },
@@ -22,6 +23,7 @@ const navigation = [
 
 export function Sidebar() {
   const pathname = usePathname();
+  const { openSearch } = useSearch();
 
   return (
     <aside className="flex w-60 flex-col border-r border-border bg-muted/50">
@@ -30,7 +32,10 @@ export function Sidebar() {
       </div>
 
       <div className="p-3">
-        <button className="flex w-full items-center gap-2 rounded-md border border-border bg-background px-3 py-2 text-sm text-muted-foreground hover:bg-accent">
+        <button
+          onClick={openSearch}
+          className="flex w-full items-center gap-2 rounded-md border border-border bg-background px-3 py-2 text-sm text-muted-foreground hover:bg-accent"
+        >
           <Search className="h-4 w-4" />
           <span>Search...</span>
           <kbd className="ml-auto text-xs text-muted-foreground">⌘K</kbd>
