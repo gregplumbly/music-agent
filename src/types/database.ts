@@ -96,34 +96,45 @@ export interface BookingStatusLog {
   note: string | null;
 }
 
+type RowType<T> = T & Record<string, unknown>;
+type InsertType<T> = T & Record<string, unknown>;
+type UpdateType<T> = T & Record<string, unknown>;
+
 export interface Database {
   public: {
     Tables: {
       artists: {
-        Row: Artist;
-        Insert: Omit<Artist, "id" | "created_at" | "updated_at">;
-        Update: Partial<Omit<Artist, "id" | "created_at" | "updated_at">>;
+        Row: RowType<Artist>;
+        Insert: InsertType<Omit<Artist, "id" | "created_at" | "updated_at">>;
+        Update: UpdateType<Partial<Omit<Artist, "id" | "created_at" | "updated_at">>>;
+        Relationships: [];
       };
       bookings: {
-        Row: Booking;
-        Insert: Omit<Booking, "id" | "created_at" | "updated_at" | "day_of_week">;
-        Update: Partial<Omit<Booking, "id" | "created_at" | "updated_at" | "day_of_week">>;
+        Row: RowType<Booking>;
+        Insert: InsertType<Omit<Booking, "id" | "created_at" | "updated_at" | "day_of_week">>;
+        Update: UpdateType<Partial<Omit<Booking, "id" | "created_at" | "updated_at" | "day_of_week">>>;
+        Relationships: [];
       };
       tours: {
-        Row: Tour;
-        Insert: Omit<Tour, "id" | "created_at">;
-        Update: Partial<Omit<Tour, "id" | "created_at">>;
+        Row: RowType<Tour>;
+        Insert: InsertType<Omit<Tour, "id" | "created_at">>;
+        Update: UpdateType<Partial<Omit<Tour, "id" | "created_at">>>;
+        Relationships: [];
       };
       booking_status_log: {
-        Row: BookingStatusLog;
-        Insert: Omit<BookingStatusLog, "id" | "changed_at">;
-        Update: Partial<Omit<BookingStatusLog, "id" | "changed_at">>;
+        Row: RowType<BookingStatusLog>;
+        Insert: InsertType<Omit<BookingStatusLog, "id" | "changed_at">>;
+        Update: UpdateType<Partial<Omit<BookingStatusLog, "id" | "changed_at">>>;
+        Relationships: [];
       };
       deal_memo_links: {
-        Row: DealMemoLink;
-        Insert: Omit<DealMemoLink, "id" | "created_at">;
-        Update: Partial<Omit<DealMemoLink, "id" | "created_at">>;
+        Row: RowType<DealMemoLink>;
+        Insert: InsertType<Omit<DealMemoLink, "id" | "created_at">>;
+        Update: UpdateType<Partial<Omit<DealMemoLink, "id" | "created_at">>>;
+        Relationships: [];
       };
     };
+    Views: Record<string, { Row: Record<string, unknown>; Relationships: never[] }>;
+    Functions: Record<string, { Args: Record<string, unknown>; Returns: unknown }>;
   };
 }
