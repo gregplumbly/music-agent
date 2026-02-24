@@ -115,22 +115,6 @@ export function BookingForm({
 
   return (
     <div className="space-y-6">
-      {/* Header: Status + Artist + Date */}
-      <div className="flex flex-wrap items-center gap-4">
-        <StatusBadge status={local.status} />
-        <Select
-          value={local.status}
-          onChange={(e) => {
-            const newStatus = e.target.value as BookingStatus;
-            setLocal((prev) => ({ ...prev, status: newStatus }));
-            onSave("status", newStatus);
-          }}
-          options={STATUS_OPTIONS}
-          disabled={disabled}
-          className="w-40"
-        />
-      </div>
-
       <Section title="Booking">
         <Field label="Artist">
           <Select

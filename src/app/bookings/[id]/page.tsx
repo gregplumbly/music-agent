@@ -7,10 +7,13 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ConfirmDialog } from "@/components/ui/confirm-dialog";
 import { BookingForm } from "@/components/bookings/booking-form";
-import { StatusBadge } from "@/components/bookings/status-badge";
+import { StatusDropdown } from "@/components/bookings/status-dropdown";
+import { StatusChangeDialog } from "@/components/bookings/status-change-dialog";
+import { StatusHistory } from "@/components/bookings/status-history";
 import { getBookingById, updateBooking, deleteBooking, duplicateBooking } from "@/lib/bookings";
+import { changeBookingStatus, unlockBooking } from "@/lib/status";
 import { getArtists } from "@/lib/artists";
-import type { Booking, Artist } from "@/types/database";
+import type { Booking, BookingStatus, Artist } from "@/types/database";
 
 export default function BookingDetailPage() {
   const params = useParams<{ id: string }>();
@@ -21,6 +24,9 @@ export default function BookingDetailPage() {
   const [loading, setLoading] = useState(true);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [unlockOpen, setUnlockOpen] = useState(false);
+  const [statusTarget, setStatusTarget] = useState<BookingStatus | null>(null);
+  const [historyKey, setHistoryKey] = useState(0);
 
   useEffect(() => {
     async function load() {
@@ -59,6 +65,40 @@ export default function BookingDetailPage() {
     [booking]
   );
 
+  const handleStatusChange = async (
+    toStatus: BookingStatus,
+    note?: string
+  ) => {
+    if (!booking) return;
+    try {
+      const result = await changeBookingStatus(
+        booking.id,
+        booking.status,
+        toStatus,
+        note
+      );
+      setBooking((prev) =>
+        prev
+          ? { ...prev, status: result.status, status_locked: result.status_locked }
+          : null
+      );
+      setHistoryKey((k) => k + 1);
+    } catch (err) {
+      console.error("Failed to change status:", err);
+    }
+  };
+
+  const handleUnlock = async () => {
+    if (!booking) return;
+    try {
+      await unlockBooking(booking.id);
+      setBooking((prev) => (prev ? { ...prev, status_locked: false } : null));
+      setUnlockOpen(false);
+    } catch (err) {
+      console.error("Failed to unlock:", err);
+    }
+  };
+
   const handleDelete = async () => {
     if (!booking) return;
     setDeleting(true);
@@ -78,11 +118,6 @@ export default function BookingDetailPage() {
     } catch (err) {
       console.error("Failed to duplicate:", err);
     }
-  };
-
-  const handleToggleLock = async () => {
-    if (!booking) return;
-    await handleSave("status_locked", !booking.status_locked);
   };
 
   if (loading) {
@@ -114,7 +149,11 @@ export default function BookingDetailPage() {
         <div>
           <div className="flex items-center gap-3">
             <h1 className="text-2xl font-semibold">{artistName}</h1>
-            <StatusBadge status={booking.status} />
+            <StatusDropdown
+              status={booking.status}
+              isLocked={booking.status_locked}
+              onSelect={(s) => setStatusTarget(s)}
+            />
             {booking.status_locked && (
               <Lock className="h-4 w-4 text-muted-foreground" />
             )}
@@ -127,19 +166,27 @@ export default function BookingDetailPage() {
         </div>
 
         <div className="flex gap-2">
-          <Button variant="outline" size="sm" onClick={handleToggleLock}>
-            {booking.status_locked ? (
-              <>
-                <Unlock className="h-4 w-4" />
-                Unlock
-              </>
-            ) : (
-              <>
-                <Lock className="h-4 w-4" />
-                Lock
-              </>
-            )}
-          </Button>
+          {booking.status_locked ? (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setUnlockOpen(true)}
+            >
+              <Unlock className="h-4 w-4" />
+              Unlock
+            </Button>
+          ) : (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() =>
+                handleSave("status_locked", true)
+              }
+            >
+              <Lock className="h-4 w-4" />
+              Lock
+            </Button>
+          )}
           <Button variant="outline" size="sm" onClick={handleDuplicate}>
             <Copy className="h-4 w-4" />
             Duplicate
@@ -164,6 +211,32 @@ export default function BookingDetailPage() {
           disabled={booking.status_locked}
         />
       </div>
+
+      <div className="mt-8">
+        <h2 className="text-sm font-medium text-muted-foreground mb-3">
+          Status History
+        </h2>
+        <StatusHistory bookingId={booking.id} refreshKey={historyKey} />
+      </div>
+
+      {statusTarget && (
+        <StatusChangeDialog
+          open={true}
+          onClose={() => setStatusTarget(null)}
+          onConfirm={handleStatusChange}
+          currentStatus={booking.status}
+          targetStatus={statusTarget}
+        />
+      )}
+
+      <ConfirmDialog
+        open={unlockOpen}
+        onClose={() => setUnlockOpen(false)}
+        onConfirm={handleUnlock}
+        title="Unlock Booking"
+        description="Are you sure you want to unlock this booking? This will allow status and field changes."
+        confirmLabel="Unlock"
+      />
 
       <ConfirmDialog
         open={deleteOpen}
