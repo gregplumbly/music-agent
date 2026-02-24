@@ -75,6 +75,18 @@ export interface Tour {
   created_at: string;
 }
 
+export type DealMemoLinkStatus = "sent" | "viewed" | "submitted" | "expired";
+
+export interface DealMemoLink {
+  id: string;
+  booking_id: string;
+  token: string;
+  status: DealMemoLinkStatus;
+  submitted_data: Record<string, unknown> | null;
+  created_at: string;
+  expires_at: string | null;
+}
+
 export interface BookingStatusLog {
   id: string;
   booking_id: string;
@@ -106,6 +118,11 @@ export interface Database {
         Row: BookingStatusLog;
         Insert: Omit<BookingStatusLog, "id" | "changed_at">;
         Update: Partial<Omit<BookingStatusLog, "id" | "changed_at">>;
+      };
+      deal_memo_links: {
+        Row: DealMemoLink;
+        Insert: Omit<DealMemoLink, "id" | "created_at">;
+        Update: Partial<Omit<DealMemoLink, "id" | "created_at">>;
       };
     };
   };
