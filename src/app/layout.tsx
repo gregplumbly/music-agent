@@ -19,7 +19,7 @@ export default function RootLayout({
         <SearchProvider>
           <div className="flex h-screen">
             <Sidebar />
-            <main className="flex-1 overflow-auto">
+            <main className="flex-1 overflow-auto pt-14 md:pt-0">
               <div className="p-6">{children}</div>
             </main>
           </div>
