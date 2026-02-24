@@ -9,7 +9,6 @@ CREATE TABLE IF NOT EXISTS bookings (
   status            booking_status NOT NULL DEFAULT 'enquiry',
   status_locked     boolean       NOT NULL DEFAULT false,
   date              date          NOT NULL,
-  day_of_week       text          GENERATED ALWAYS AS (to_char(date, 'Day')) STORED,
   country           text,
   city              text,
   venue_name        text,

@@ -37,7 +37,6 @@ export interface Booking {
   status: BookingStatus;
   status_locked: boolean;
   date: string;
-  day_of_week: string | null;
   country: string | null;
   city: string | null;
   venue_name: string | null;
@@ -111,8 +110,8 @@ export interface Database {
       };
       bookings: {
         Row: RowType<Booking>;
-        Insert: InsertType<Omit<Booking, "id" | "created_at" | "updated_at" | "day_of_week">>;
-        Update: UpdateType<Partial<Omit<Booking, "id" | "created_at" | "updated_at" | "day_of_week">>>;
+        Insert: InsertType<Omit<Booking, "id" | "created_at" | "updated_at">>;
+        Update: UpdateType<Partial<Omit<Booking, "id" | "created_at" | "updated_at">>>;
         Relationships: [];
       };
       tours: {
