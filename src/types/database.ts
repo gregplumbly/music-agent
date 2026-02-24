@@ -37,6 +37,7 @@ export interface Booking {
   status: BookingStatus;
   status_locked: boolean;
   date: string;
+  day_of_week: string | null;
   country: string | null;
   city: string | null;
   venue_name: string | null;
@@ -99,19 +100,30 @@ type RowType<T> = T & Record<string, unknown>;
 type InsertType<T> = T & Record<string, unknown>;
 type UpdateType<T> = T & Record<string, unknown>;
 
+/** Extract keys whose value type includes null */
+type NullableKeys<T> = {
+  [K in keyof T]: null extends T[K] ? K : never;
+}[keyof T];
+
+/** Make nullable fields optional for inserts */
+type InsertShape<T, Omitted extends keyof T> = InsertType<
+  Required<Pick<T, Exclude<keyof T, Omitted | NullableKeys<T>>>> &
+  Partial<Pick<T, NullableKeys<T> & Exclude<keyof T, Omitted>>>
+>;
+
 export interface Database {
   public: {
     Tables: {
       artists: {
         Row: RowType<Artist>;
-        Insert: InsertType<Omit<Artist, "id" | "created_at" | "updated_at">>;
+        Insert: InsertShape<Artist, "id" | "created_at" | "updated_at">;
         Update: UpdateType<Partial<Omit<Artist, "id" | "created_at" | "updated_at">>>;
         Relationships: [];
       };
       bookings: {
         Row: RowType<Booking>;
-        Insert: InsertType<Omit<Booking, "id" | "created_at" | "updated_at">>;
-        Update: UpdateType<Partial<Omit<Booking, "id" | "created_at" | "updated_at">>>;
+        Insert: InsertShape<Booking, "id" | "created_at" | "updated_at" | "day_of_week">;
+        Update: UpdateType<Partial<Omit<Booking, "id" | "created_at" | "updated_at" | "day_of_week">>>;
         Relationships: [];
       };
       tours: {
