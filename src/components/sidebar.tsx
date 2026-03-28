@@ -12,11 +12,8 @@ import {
   Search,
   Menu,
   X,
-  LogOut,
 } from "lucide-react";
-import { useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { createClient } from "@/lib/supabase/client";
 import { useSearch } from "@/components/search/search-provider";
 
 const navigation = [
@@ -29,14 +26,7 @@ const navigation = [
 
 function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
   const pathname = usePathname();
-  const router = useRouter();
   const { openSearch } = useSearch();
-
-  async function handleSignOut() {
-    const supabase = createClient();
-    await supabase.auth.signOut();
-    router.push("/login");
-  }
 
   return (
     <>
@@ -79,15 +69,6 @@ function SidebarContent({ onNavigate }: { onNavigate?: () => void }) {
         })}
       </nav>
 
-      <div className="border-t border-border p-3">
-        <button
-          onClick={handleSignOut}
-          className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
-        >
-          <LogOut className="h-4 w-4" />
-          Sign out
-        </button>
-      </div>
     </>
   );
 }
